@@ -86,10 +86,38 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
+    def _render_page(self, file):
+        try:
+            url = "html/" + file + ".html"
+            with open(url, "rb") as f:
+                content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset: utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+        except Exception as e:
+            self._send_json(404, {"error": e})
+
     def do_GET(self):
         global teams
 
-        if self.path == "/teams":
+        if self.path == "/" or self.path == "/dashboard":
+            self._render_page("dashboard")
+
+        elif self.path == "/presenter":
+            # check if request has cookie
+            self._render_page("presenter")
+
+        elif self.path == "/user":
+            # check if request has cookie
+            self._render_page("user")
+        
+        elif self.path == "/jury":
+            # check if request has cookie
+            self._render_page("jury")
+
+        elif self.path == "/teams":
             self._send_json(200, {"teams": [team.name for team in teams]})
 
         elif self.path == "/queue":
