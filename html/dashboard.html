@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke</h1>
+    <div style="display:flex; gap:50px" id="container">
+        <div id="queue-container">
+            <h3>Cola para cantar</h3>
+            <ul id="queue"> 
+            </ul>
+        </div>
+        <div style="flex-grow:1" id="live-score-container">
+            <h3>Puntajes en vivo</h3>
+            <p id="singer-name"></p>
+            <div style="display:flex; justify-content:space-around">
+                <div style="padding: 10px; text-align: center;">
+                    <h1 id="score-0"></h1>
+                </div>
+                <div style="padding: 10px; text-align: center;">
+                    <h1 id="score-1"></h1>
+                </div>
+                <div style="padding: 10px; text-align: center;">
+                    <h1 id="score-2"></h1>
+                </div>    
+            </div>
+        </div>
+        <div id="scoreboard-container">
+            <h3>Scoreboard</h3>
+            <table id="scoreboard">
+                <tr> <td>Nombre</td> <td>Puntaje</td> </tr>
+                <tr>
+                    <td>Participante 1</td>
+                    <td>0.0</td>
+                </tr>
+                <tr>
+                    <td>Participante 2</td>
+                    <td>0.0</td>
+                </tr>
+                <tr>
+                    <td>Participante 3</td>
+                    <td>0.0</td>
+                </tr>
+                <tr>
+                    <td>Participante 4</td>
+                    <td>0.0</td>
+                </tr>
+            <table>
+        </div>
+    </div>
+</body>
+<script>
+const url = window.location.host;
+
+async function renderQueue() {
+    const response = await fetch("http://127.0.0.1:8000/queue")
+    let data = await response.json()  
+
+    if (data) {
+        queue = document.getElementById("queue");
+        queue.innerHTML = "";
+        data["queue"].map((item) => {
+            const li = document.createElement("li");
+            li.innerHTML = item;
+            queue.appendChild(li);
+        })
+    }
+}
+
+async function renderSingerName() {
+    const response = await fetch("http://127.0.0.1:8000/live_score")
+    let data = await response.json()  
+
+    if (data) {
+        singer_name = document.getElementById("singer-name");
+        singer_name.innerHTML = "Esta cantando: " + data["singer"] || "Esperando participante..."
+
+        for (let i = 0; i < 3; i++) {
+            id = "score-" + i.toString();
+            score = document.getElementById(id);
+            score.innerHTML = data["live_score"][i] || '?';
+        } 
+    }
+}
+
+async function renderScoreboard() {
+    const response = await fetch("http://127.0.0.1:8000/scoreboard")
+    let data = await response.json()  
+
+    if (data) {
+        scoreboard = document.getElementById("scoreboard");
+        scoreboard.innerHTML = "<tr> <td>Nombre</td> <td>Puntaje</td> </tr>";
+        data["scoreboard"].map((item) => {
+            const tr = document.createElement("tr");
+            const name_td = document.createElement("td");
+            const score_td = document.createElement("td");
+            name_td.innerHTML = item["name"];
+            score_td.innerHTML = item["total_score"];
+            tr.appendChild(name_td);
+            tr.appendChild(score_td);
+            scoreboard.appendChild(tr);
+        })
+    }
+}
+
+setInterval(() => {
+    renderQueue();
+    renderSingerName();
+    renderScoreboard();
+}, 200);
+</script>
+</html>
