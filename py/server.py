@@ -97,14 +97,17 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"queue": [item.get("team").name for item in queue]})
 
         elif self.path == "/live_score":
-            global live_score
-            self._send_json(200, {"live_score": live_score})
+            global singer, live_score
+            self._send_json(200, {
+                "singer": singer,
+                "live_score": live_score
+            })
 
         elif self.path == "/scoreboard":
             self._send_json(200, {
                 "scoreboard": [{
                     "name": team.name,
-                    "total_score": team.get_total_score()
+                    "total_score": round(team.get_total_score(), 2)
                 } for team in teams]
             })
 
