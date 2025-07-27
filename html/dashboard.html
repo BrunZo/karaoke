@@ -30,31 +30,13 @@
             <h3>Scoreboard</h3>
             <table id="scoreboard">
                 <tr> <td>Nombre</td> <td>Puntaje</td> </tr>
-                <tr>
-                    <td>Participante 1</td>
-                    <td>0.0</td>
-                </tr>
-                <tr>
-                    <td>Participante 2</td>
-                    <td>0.0</td>
-                </tr>
-                <tr>
-                    <td>Participante 3</td>
-                    <td>0.0</td>
-                </tr>
-                <tr>
-                    <td>Participante 4</td>
-                    <td>0.0</td>
-                </tr>
             <table>
         </div>
     </div>
 </body>
 <script>
-const url = window.location.host;
-
 async function renderQueue() {
-    const response = await fetch("http://127.0.0.1:8000/queue")
+    const response = await fetch("/queue")
     let data = await response.json()  
 
     if (data) {
@@ -69,7 +51,7 @@ async function renderQueue() {
 }
 
 async function renderSingerName() {
-    const response = await fetch("http://127.0.0.1:8000/live_score")
+    const response = await fetch("/live_score")
     let data = await response.json()  
 
     if (data) {
@@ -85,7 +67,7 @@ async function renderSingerName() {
 }
 
 async function renderScoreboard() {
-    const response = await fetch("http://127.0.0.1:8000/scoreboard")
+    const response = await fetch("/scoreboard")
     let data = await response.json()  
 
     if (data) {
