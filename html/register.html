@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke</h1>
+    <div style="display:flex; gap:50px" id="container">
+        <input id="name-field" placeholder="Nombre"/>
+        <button onclick="register()">Registrarse</button>
+    </div>
+</body>
+<script>
+const url = window.location.host;
+async function register() {
+    let name = document.getElementById("name-field").value;
+    let data = { "name": name }
+    const response = await fetch("/register", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+        },
+        "body": JSON.stringify(data)
+    })
+}
+</script>
+</html>

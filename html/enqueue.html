@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke</h1>
+    <p>Equipo: <span id="team-name"></span></p>
+    <div style="display:flex; gap:50px" id="container">
+        <button onclick="enqueue()">Unirme a la cola</button>
+    </div>
+</body>
+<script>
+addEventListener("load", async (e) => {
+    const response = await fetch("/team_name");
+    const data = await response.json()
+
+    if (data) {
+        name_holder = document.getElementById("team-name");
+        name_holder.innerHTML = data["name"];
+    }
+})
+
+async function enqueue() {
+    const response = await fetch("/team_name");
+    const data = await response.json()
+
+    await fetch("/enqueue", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+        },
+        "body": JSON.stringify(data)
+    })
+}
+</script>
+</html>

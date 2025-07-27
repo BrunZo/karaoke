@@ -1,3 +1,5 @@
+import http.cookies
+import uuid
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -16,6 +18,13 @@ def find_team_by_name(name):
             return team
     return None
 
+def find_team_by_id(team_id):
+    global teams
+    for team in teams:
+        if team.team_id == team_id:
+            return team
+    return None
+
 def register_team(name):
     global teams
 
@@ -27,7 +36,8 @@ def register_team(name):
 
     team = Team(name)
     teams.append(team)
-    return 200, {"message": "success"}
+    team_id = team.get_id()
+    return 200, {"message": "success", "team_id": team_id}
 
 def enqueue_team(name, timestamp):
     global teams, queue
@@ -67,6 +77,7 @@ def commit_scores():
 class Team():
 
     def __init__(self, name):
+        self.team_id = str(uuid.uuid4())
         self.name = name
         self.scores = []
 
@@ -74,15 +85,20 @@ class Team():
         assert len(scores) == JUDGES_COUNT
         self.scores.append(scores)
 
+    def get_id(self):
+        return self.team_id
+
     def get_total_score(self):
         return avg([avg(round_scores) for round_scores in self.scores])
 
 
 class RequestHandler(BaseHTTPRequestHandler):
 
-    def _send_json(self, code, data):
+    def _send_json(self, code, data, cookies={}):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
+        for key in cookies:
+            self.send_header("Set-Cookie", f"{key}={cookies[key]}; Path=/; HttpOnly")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
@@ -110,12 +126,27 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._render_page("presenter")
 
         elif self.path == "/user":
-            # check if request has cookie
-            self._render_page("user")
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            team_id = cookies.get("team_id")
+            if team_id and find_team_by_id(team_id.value):
+                self._render_page("enqueue")
+            else:
+                self._render_page("register")
         
         elif self.path == "/jury":
             # check if request has cookie
             self._render_page("jury")
+
+        elif self.path == "/team_name":
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            team_id = cookies.get("team_id")
+            if team_id and find_team_by_id(team_id.value):
+                team = find_team_by_id(team_id.value)
+                self._send_json(200, {"name": team.name})
+            else:
+                self._send_json(400, {"message": "Please register"})
 
         elif self.path == "/teams":
             self._send_json(200, {"teams": [team.name for team in teams]})
@@ -155,7 +186,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path == "/register":
             name = data.get("name")
             code, data = register_team(name)
-            self._send_json(code, data)
+            self._send_json(code, data, cookies={"team_id": data.get("team_id")})
 
         elif self.path == "/enqueue":
             name = data.get("name")
