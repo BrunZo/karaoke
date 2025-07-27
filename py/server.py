@@ -11,6 +11,13 @@ def avg(l):
         return 0
     return sum(l) / len(l)
 
+def find_judge_by_id(judge_id):
+    global judges
+    for judge in judges:
+        if judge.judge_id == judge_id:
+            return judge
+    return None
+
 def find_team_by_id(team_id):
     global teams
     for team in teams:
@@ -24,6 +31,26 @@ def find_team_by_name(name):
         if team.name == name:
             return team
     return None
+
+def register_presenter():
+    global presenter_id
+
+    if presenter_id:
+        return 400, {"error": "Presenter has already been selected"}
+
+    presenter_id = str(uuid.uuid4())
+    return 200, {"message": "success", "presenter_id": presenter_id}
+
+def register_judge():
+    global judges
+
+    if len(judges) >= JUDGES_COUNT:
+        return 400, {"error": "All judges are already registered"}
+
+    judge = Judge()
+    judges.append(judge)
+    judge_id = judge.judge_id
+    return 200, {"message": "success", "judge_id": judge_id}
 
 def register_team(name):
     global teams
@@ -88,6 +115,12 @@ class Team():
     def get_total_score(self):
         return avg([avg(round_scores) for round_scores in self.scores])
 
+class Judge():
+
+    def __init__(self):
+        global judges
+        self.judge_id = str(uuid.uuid4())
+        self.num = len(judges)
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -131,9 +164,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 self._render_page("register")
         
-        elif self.path == "/jury":
-            # check if request has cookie
-            self._render_page("jury")
+        elif self.path == "/judge":
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            judge_id = cookies.get("judge_id")
+            if judge_id and find_judge_by_id(judge_id.value):
+                self._render_page("vote")
+            else:
+                self._render_page("judge")
 
         elif self.path == "/team_name":
             cookie_header = self.headers.get("Cookie")
@@ -190,6 +228,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             code, data = register_team(name)
             self._send_json(code, data, cookies={"team_id": data.get("team_id")})
 
+        elif self.path == "/judge":
+            code, data = register_judge()
+            self._send_json(code, data, cookies={"judge_id": data.get("judge_id")})
+
+        elif self.path == "/presenter":
+            code, data = register_presenter()
+            self._send_json(code, data, cookies={"presenter_id": data.get("presenter_id")})
+
         elif self.path == "/enqueue":
             cookie_header = self.headers.get("Cookie")
             cookies = http.cookies.SimpleCookie(cookie_header)
@@ -217,10 +263,22 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif self.path == "/send_score":
             global live_score
-            jury = data.get("jury")
-            score = data.get("score")
-            live_score[jury] = score
-            self._send_json(200, {"message": "Success"})
+
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            judge_id = cookies.get("judge_id")
+            if judge_id and find_judge_by_id(judge_id.value):
+                judge = find_judge_by_id(judge_id.value)
+
+                if not singer:
+                    self._send_json(400, { "error": "Singer not chosen" })
+                    return
+
+                live_score[judge.num] = data.get("score")
+                self._send_json(200, {"message": "Success"})
+
+            else:
+                self._send_json(400, { "error": "Only judges can send score" })
 
         elif self.path == "/commit_scores":
             code, data = commit_scores()
@@ -233,8 +291,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-
+    
     teams = []
+    judges = []
     queue = []
     singer = None
     live_score = [None] * JUDGES_COUNT

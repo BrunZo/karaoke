@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke</h1>
+    <div style="display:flex; gap:50px" id="container">
+        <button onclick="register()">Registrar dispositivo como juez</button>
+    </div>
+</body>
+<script>
+const url = window.location.host;
+async function register() {
+    fetch("/judge", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+        },
+        "body": "{}"
+    }).then(() => {
+        window.location.reload()
+    })
+}
+</script>
+</html>

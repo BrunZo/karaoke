@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke</h1>
+    <input id="score" label="Puntaje" />
+    <div style="display:flex; gap:50px" id="container">
+        <button onclick="send_score()">Enviar puntaje</button>
+    </div>
+</body>
+<script>
+async function send_score() {
+    const score = document.getElementById("score").value;
+    const data = { "score": score }
+    const response = await fetch("/send_score", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+        },
+        "body": JSON.stringify(data)
+    })
+}
+</script>
+</html>
