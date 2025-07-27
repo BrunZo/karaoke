@@ -22,15 +22,12 @@ addEventListener("load", async (e) => {
 })
 
 async function enqueue() {
-    const response = await fetch("/team_name");
-    const data = await response.json()
-
     await fetch("/enqueue", {
         "method": "POST",
         "headers": {
             "Content-Type": "application/json",
         },
-        "body": JSON.stringify(data)
+        "body": "{}"
     })
 }
 </script>

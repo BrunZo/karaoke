@@ -11,17 +11,17 @@ def avg(l):
         return 0
     return sum(l) / len(l)
 
-def find_team_by_name(name):
-    global teams
-    for team in teams:
-        if team.name == name:
-            return team
-    return None
-
 def find_team_by_id(team_id):
     global teams
     for team in teams:
         if team.team_id == team_id:
+            return team
+    return None
+
+def find_team_by_name(name):
+    global teams
+    for team in teams:
+        if team.name == name:
             return team
     return None
 
@@ -36,20 +36,20 @@ def register_team(name):
 
     team = Team(name)
     teams.append(team)
-    team_id = team.get_id()
+    team_id = team.team_id
     return 200, {"message": "success", "team_id": team_id}
 
-def enqueue_team(name, timestamp):
+def enqueue_team(team_id, timestamp):
     global teams, queue
 
     def comp(team):
         return len(team.get("team").scores), team.get("timestamp")
 
     for item in queue:
-        if item.get("team").name == name:
+        if item.get("team").team_id == team_id:
             return 400, {"error": "Team already in queue"} 
 
-    team = find_team_by_name(name)
+    team = find_team_by_id(team_id)
     if not team:
         return 400, {"error": "Team not found"} 
 
@@ -67,7 +67,7 @@ def commit_scores():
     if (any([s == None for s in live_score])):
         return 400, {"error": "Waiting for judge score"}
 
-    team = find_team_by_name(singer)
+    team = find_team_by_id(singer)
     if not team:
         return 400, {"error": "Team not found"} 
     team.add_score(live_score)
@@ -84,9 +84,6 @@ class Team():
     def add_score(self, scores):
         assert len(scores) == JUDGES_COUNT
         self.scores.append(scores)
-
-    def get_id(self):
-        return self.team_id
 
     def get_total_score(self):
         return avg([avg(round_scores) for round_scores in self.scores])
@@ -157,10 +154,15 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif self.path == "/live_score":
             global singer, live_score
-            self._send_json(200, {
-                "singer": singer,
-                "live_score": live_score
-            })
+
+            team = find_team_by_id(singer)
+            if not team:
+                self._send_json(200, { "singer": "esperando..." })
+            else:
+                self._send_json(200, {
+                    "singer": team.name,
+                    "live_score": live_score
+                })
 
         elif self.path == "/scoreboard":
             self._send_json(200, {
@@ -189,11 +191,16 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(code, data, cookies={"team_id": data.get("team_id")})
 
         elif self.path == "/enqueue":
-            name = data.get("name")
-            timestamp = datetime.now()
-            code, data = enqueue_team(name, timestamp)
-            self._send_json(code, data)
-
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            team_id = cookies.get("team_id")
+            if team_id and find_team_by_id(team_id.value):
+                timestamp = datetime.now()
+                code, data = enqueue_team(team_id.value, timestamp)
+                self._send_json(code, data)
+            else:
+                self._send_json(400, {"message": "Please register"})
+            
         elif self.path == "/dequeue":
             global queue, singer
 
@@ -205,7 +212,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Empty queue"})
                 return
 
-            singer = queue.pop(0).get("team").name
+            singer = queue.pop(0).get("team").team_id
             self._send_json(200, {"singer": singer})
 
         elif self.path == "/send_score":
