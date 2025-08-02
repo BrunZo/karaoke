@@ -1,126 +1,10 @@
 import http.cookies
-import uuid
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
-JUDGES_COUNT = 3
-
-def avg(l):
-    if len(l) == 0:
-        return 0
-    return sum(l) / len(l)
-
-def find_judge_by_id(judge_id):
-    global judges
-    for judge in judges:
-        if judge.judge_id == judge_id:
-            return judge
-    return None
-
-def find_team_by_id(team_id):
-    global teams
-    for team in teams:
-        if team.team_id == team_id:
-            return team
-    return None
-
-def find_team_by_name(name):
-    global teams
-    for team in teams:
-        if team.name == name:
-            return team
-    return None
-
-def register_presenter():
-    global presenter_id
-
-    if presenter_id:
-        return 400, {"error": "Presenter has already been selected"}
-
-    presenter_id = str(uuid.uuid4())
-    return 200, {"message": "success", "presenter_id": presenter_id}
-
-def register_judge():
-    global judges
-
-    if len(judges) >= JUDGES_COUNT:
-        return 400, {"error": "All judges are already registered"}
-
-    judge = Judge()
-    judges.append(judge)
-    judge_id = judge.judge_id
-    return 200, {"message": "success", "judge_id": judge_id}
-
-def register_team(name):
-    global teams
-
-    if not name:
-        return 404, {"error": "Invalid name"}
-
-    if find_team_by_name(name):
-        return 400, {"error": "Team name already exists"} 
-
-    team = Team(name)
-    teams.append(team)
-    team_id = team.team_id
-    return 200, {"message": "success", "team_id": team_id}
-
-def enqueue_team(team_id, timestamp):
-    global teams, queue
-
-    def comp(team):
-        return len(team.get("team").scores), team.get("timestamp")
-
-    for item in queue:
-        if item.get("team").team_id == team_id:
-            return 400, {"error": "Team already in queue"} 
-
-    team = find_team_by_id(team_id)
-    if not team:
-        return 400, {"error": "Team not found"} 
-
-    queue.append({"team": team, "timestamp": timestamp})
-    queue.sort(key=comp)
-
-    return 200, {"message": "Success"}
-
-def commit_scores():
-    global singer, live_score
-
-    if not singer:
-        return 400, {"error": "Singer not chosen"}
-    
-    if (any([s == None for s in live_score])):
-        return 400, {"error": "Waiting for judge score"}
-
-    team = find_team_by_id(singer)
-    if not team:
-        return 400, {"error": "Team not found"} 
-    team.add_score(live_score)
-
-    return 200, {"score": live_score}
-
-class Team():
-
-    def __init__(self, name):
-        self.team_id = str(uuid.uuid4())
-        self.name = name
-        self.scores = []
-
-    def add_score(self, scores):
-        assert len(scores) == JUDGES_COUNT
-        self.scores.append(scores)
-
-    def get_total_score(self):
-        return avg([avg(round_scores) for round_scores in self.scores])
-
-class Judge():
-
-    def __init__(self):
-        global judges
-        self.judge_id = str(uuid.uuid4())
-        self.num = len(judges)
+from .team import teams, queue, find_team_by_id
+from .judge import find_judge_by_id
+from .endpoints import register_team, enqueue_team, register_judge, register_presenter, commit_scores, singer, live_score
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -229,12 +113,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(code, data, cookies={"team_id": data.get("team_id")})
 
         elif self.path == "/judge":
-            code, data = register_judge()
-            self._send_json(code, data, cookies={"judge_id": data.get("judge_id")})
+            code, data, cookies = register_judge()
+            self._send_json(code, data, cookies=cookies)
 
         elif self.path == "/presenter":
-            code, data = register_presenter()
-            self._send_json(code, data, cookies={"presenter_id": data.get("presenter_id")})
+            code, data, cookies = register_presenter()
+            self._send_json(code, data, cookies=cookies)
 
         elif self.path == "/enqueue":
             cookie_header = self.headers.get("Cookie")
@@ -281,6 +165,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json(400, { "error": "Only judges can send score" })
 
         elif self.path == "/commit_scores":
+            # add check for presenter
             code, data = commit_scores()
             self._send_json(code, data)
             singer = None
@@ -292,12 +177,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     
-    teams = []
-    judges = []
-    queue = []
-    singer = None
-    live_score = [None] * JUDGES_COUNT
-
     server = HTTPServer(("127.0.0.1", 8000), RequestHandler)
     server.serve_forever()
 
