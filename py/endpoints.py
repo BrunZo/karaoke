@@ -4,6 +4,11 @@ from .judge import Judge, judges, JUDGES_COUNT
 
 singer = None
 live_score = [None] * JUDGES_COUNT
+presenter_id = None
+
+def find_presenter_by_id(presenter_id_to_check):
+    global presenter_id
+    return presenter_id == presenter_id_to_check
 
 def register_team(name):
     global teams

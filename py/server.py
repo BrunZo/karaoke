@@ -4,7 +4,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from .team import teams, queue, find_team_by_id
 from .judge import find_judge_by_id
-from .endpoints import register_team, enqueue_team, register_judge, register_presenter, commit_scores, singer, live_score
+from .endpoints import register_team, enqueue_team, register_judge, register_presenter, commit_scores, singer, live_score, find_presenter_by_id
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -36,8 +36,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._render_page("dashboard")
 
         elif self.path == "/presenter":
-            # check if request has cookie
-            self._render_page("presenter")
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            presenter_id = cookies.get("presenter_id")
+            if presenter_id and find_presenter_by_id(presenter_id.value):
+                self._render_page("dequeue")
+            else:
+                self._render_page("presenter")
 
         elif self.path == "/user":
             cookie_header = self.headers.get("Cookie")
@@ -56,6 +61,15 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._render_page("vote")
             else:
                 self._render_page("judge")
+
+        elif self.path == "/dequeue":
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            presenter_id = cookies.get("presenter_id")
+            if presenter_id and find_presenter_by_id(presenter_id.value):
+                self._render_page("dequeue")
+            else:
+                self._render_page("presenter")
 
         elif self.path == "/team_name":
             cookie_header = self.headers.get("Cookie")
@@ -134,6 +148,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path == "/dequeue":
             global queue, singer
 
+            # Check for presenter authentication
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            presenter_id = cookies.get("presenter_id")
+            if not presenter_id or not find_presenter_by_id(presenter_id.value):
+                self._send_json(400, {"error": "Only presenter can dequeue"})
+                return
+
             if singer:
                 self._send_json(400, {"error": "Singer already chosen"})
                 return
@@ -165,7 +187,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json(400, { "error": "Only judges can send score" })
 
         elif self.path == "/commit_scores":
-            # add check for presenter
+            # Check for presenter authentication
+            cookie_header = self.headers.get("Cookie")
+            cookies = http.cookies.SimpleCookie(cookie_header)
+            presenter_id = cookies.get("presenter_id")
+            if not presenter_id or not find_presenter_by_id(presenter_id.value):
+                self._send_json(400, {"error": "Only presenter can commit scores"})
+                return
+
             code, data = commit_scores()
             self._send_json(code, data)
             singer = None

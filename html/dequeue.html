@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Karaoke - Dequeue</title>
+</head>
+<body style="padding: 10px">
+    <h1 id="title">Karaoke - Dequeue</h1>
+    <div style="display:flex; gap:50px" id="container">
+        <button onclick="dequeueNext()">Dequeue Next Performer</button>
+        <button onclick="commitScores()">Commit Scores</button>
+    </div>
+    <div id="status" style="margin-top: 20px;"></div>
+</body>
+<script>
+async function dequeueNext() {
+    try {
+        const response = await fetch("/dequeue", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": "{}"
+        });
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Successfully dequeued performer</p>`;
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+
+async function commitScores() {
+    try {
+        const response = await fetch("/commit_scores", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": "{}"
+        });
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Scores committed successfully</p>`;
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+</script>
+</html> 
