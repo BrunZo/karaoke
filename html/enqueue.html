@@ -5,30 +5,46 @@
 </head>
 <body style="padding: 10px">
     <h1 id="title">Karaoke</h1>
-    <p>Equipo: <span id="team-name"></span></p>
     <div style="display:flex; gap:50px" id="container">
+        <label for="team-name">Equipo:</label>
+        <input type="text" id="team-name" readonly>
         <button onclick="enqueue()">Unirme a la cola</button>
     </div>
+    <div id="status" style="margin-top: 20px;"></div>
 </body>
 <script>
 addEventListener("load", async (e) => {
-    const response = await fetch("/team_name");
-    const data = await response.json()
+    try {
+        const response = await fetch("/team_name");
+        const data = await response.json()
 
-    if (data) {
-        name_holder = document.getElementById("team-name");
-        name_holder.innerHTML = data["name"];
+        if (data) {
+            name_holder = document.getElementById("team-name");
+            name_holder.innerHTML = data["name"];
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
     }
 })
 
 async function enqueue() {
-    await fetch("/enqueue", {
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json",
-        },
-        "body": "{}"
-    })
+    try {
+        const response = await fetch("/enqueue", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": "{}"
+        });
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Te uniste a la cola exitosamente</p>`;
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.message || data.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
 }
 </script>
 </html>

@@ -9,21 +9,31 @@
         <input id="name-field" placeholder="Nombre"/>
         <button onclick="register()">Registrarse</button>
     </div>
+    <div id="status" style="margin-top: 20px;"></div>
 </body>
 <script>
 const url = window.location.host;
 async function register() {
-    let name = document.getElementById("name-field").value;
-    let data = { "name": name }
-    fetch("/register", {
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json",
-        },
-        "body": JSON.stringify(data)
-    }).then(() => {
-        window.location.reload()
-    })
+    try {
+        let name = document.getElementById("name-field").value;
+        let data = { "name": name }
+        const response = await fetch("/register", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": JSON.stringify(data)
+        });
+        const responseData = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Te registraste exitosamente</p>`;
+            window.location.reload();
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${responseData.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
 }
 </script>
 </html>

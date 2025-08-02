@@ -5,22 +5,34 @@
 </head>
 <body style="padding: 10px">
     <h1 id="title">Karaoke</h1>
-    <input id="score" label="Puntaje" />
     <div style="display:flex; gap:50px" id="container">
-        <button onclick="send_score()">Enviar puntaje</button>
+        <label for="score-input">Puntaje:</label>
+        <input type="number" id="score-input" min="0" max="10" step="1" value="5">
+        <button onclick="vote()">Enviar puntaje</button>
     </div>
+    <div id="status" style="margin-top: 20px;"></div>
 </body>
 <script>
-async function send_score() {
-    const score = document.getElementById("score").value;
-    const data = { "score": score }
-    const response = await fetch("/send_score", {
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json",
-        },
-        "body": JSON.stringify(data)
-    })
+async function vote() {
+    try {
+        const score = document.getElementById("score-input").value;
+        const data = { "score": parseInt(score) }
+        const response = await fetch("/send_score", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": JSON.stringify(data)
+        });
+        const responseData = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Puntaje enviado exitosamente</p>`;
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${responseData.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
 }
 </script>
 </html>

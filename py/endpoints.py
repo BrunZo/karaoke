@@ -1,85 +1,94 @@
 import uuid
-from .team import Team, teams, queue, find_team_by_id, find_team_by_name
-from .judge import Judge, judges, JUDGES_COUNT
-
-singer = None
-live_score = [None] * JUDGES_COUNT
-presenter_id = None
+from .team import Team, find_team_by_id, find_team_by_name
+from .judge import Judge, find_judge_by_id
+import py.common as common
 
 def find_presenter_by_id(presenter_id_to_check):
-    global presenter_id
-    return presenter_id == presenter_id_to_check
+    return common.presenter_id == presenter_id_to_check
 
 def register_team(name):
-    global teams
 
     if not name:
-        return 404, {"error": "Invalid name"}
+        return 404, {"error": "Nombre inválido"}
 
     if find_team_by_name(name):
-        return 400, {"error": "Team name already exists"} 
+        return 400, {"error": "El nombre de equipo ya existe"} 
 
     team = Team(name)
-    teams.append(team)
+    common.teams.append(team)
     team_id = team.team_id
     return 200, {"message": "success", "team_id": team_id}
 
 def enqueue_team(team_id, timestamp):
-    global teams, queue
-
+    
     def comp(team):
         return len(team.get("team").scores), team.get("timestamp")
 
-    for item in queue:
+    for item in common.queue:
         if item.get("team").team_id == team_id:
-            return 400, {"error": "Team already in queue"} 
+            return 400, {"error": "El equipo ya está en la cola"} 
 
     team = find_team_by_id(team_id)
     if not team:
-        return 400, {"error": "Team not found"} 
+        return 400, {"error": "Equipo no encontrado"} 
 
-    queue.append({"team": team, "timestamp": timestamp})
-    queue.sort(key=comp)
+    common.queue.append({"team": team, "timestamp": timestamp})
+    common.queue.sort(key=comp)
 
     return 200, {"message": "Success"}
 
 def dequeue_team():
-    pass
+    
+    if common.singer:
+        return 400, {"error": "Cantante ya elegido"}
+    
+    if len(common.queue) == 0:
+        return 400, {"error": "La cola está vacía"}
+    
+    common.singer = common.queue.pop(0).get("team").team_id
+    return 200, { "message": "Success" }
 
 def register_judge():
-    global judges
 
-    if len(judges) >= JUDGES_COUNT:
-        return 400, {"error": "All judges are already registered"}
+    if len(common.judges) >= common.JUDGES_COUNT:
+        return 400, {"error": "Todos los jueces ya están registrados"}
 
     judge = Judge()
-    judges.append(judge)
+    common.judges.append(judge)
     return 200, {"message": "success"}, {"judge_id": judge.get_id()} 
 
-def send_score():
-    pass
+def send_score(judge_id, score):
+
+    judge = find_judge_by_id(judge_id)
+    if not judge:
+        return 400, {"error": "Juez no encontrado"} 
+
+    if not common.singer:
+        return 400, { "error": "Cantante aún no elegido" }
+
+    common.live_score[judge.num] = score
+    return 200, {"message": "Success"}
 
 def register_presenter():
-    global presenter_id
 
-    if presenter_id:
-        return 400, {"error": "Presenter has already been selected"}
+    if common.presenter_id:
+        return 400, {"error": "El presentador ya ha sido seleccionado"}
 
-    presenter_id = str(uuid.uuid4())
-    return 200, {"message": "success"}, {"presenter_id": presenter_id}
+    common.presenter_id = str(uuid.uuid4())
+    return 200, {"message": "success"}, {"presenter_id": common.presenter_id}
 
 def commit_scores():
-    global singer, live_score
 
-    if not singer:
-        return 400, {"error": "Singer not chosen"}
+    if not common.singer:
+        return 400, {"error": "Cantante no elegido"}
     
-    if (any([s == None for s in live_score])):
-        return 400, {"error": "Waiting for judge score"}
+    if (any([s == None for s in common.live_score])):
+        return 400, {"error": "Esperando puntaje de jueces"}
 
-    team = find_team_by_id(singer)
+    team = find_team_by_id(common.singer)
     if not team:
-        return 400, {"error": "Team not found"} 
-    team.add_score(live_score)
+        return 400, {"error": "Equipo no encontrado"} 
+    team.add_score(common.live_score)
+    common.singer, common.live_score = None, [None, None, None]
 
-    return 200, {"score": live_score}
+    return 200, {"message": "success"}

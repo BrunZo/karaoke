@@ -2,9 +2,12 @@ import http.cookies
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from .team import teams, queue, find_team_by_id
-from .judge import find_judge_by_id
-from .endpoints import register_team, enqueue_team, register_judge, register_presenter, commit_scores, singer, live_score, find_presenter_by_id
+from .team import find_team_by_id
+from .judge import find_judge_by_id 
+from .endpoints import register_team, enqueue_team, dequeue_team
+from .endpoints import register_judge, send_score
+from .endpoints import register_presenter, commit_scores, find_presenter_by_id
+import py.common as common
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -29,96 +32,84 @@ class RequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(404, {"error": e})
 
-    def do_GET(self):
-        global teams
+    def _get_cookie(self, cookie_name):
+        cookie_header = self.headers.get("Cookie")
+        cookies = http.cookies.SimpleCookie(cookie_header)
+        return cookies.get(cookie_name)
 
+    def do_GET(self):
         if self.path == "/" or self.path == "/dashboard":
             self._render_page("dashboard")
 
         elif self.path == "/presenter":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            presenter_id = cookies.get("presenter_id")
+            presenter_id = self._get_cookie("presenter_id")
             if presenter_id and find_presenter_by_id(presenter_id.value):
                 self._render_page("dequeue")
             else:
                 self._render_page("presenter")
 
         elif self.path == "/user":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            team_id = cookies.get("team_id")
+            team_id = self._get_cookie("team_id")
             if team_id and find_team_by_id(team_id.value):
                 self._render_page("enqueue")
             else:
                 self._render_page("register")
         
         elif self.path == "/judge":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            judge_id = cookies.get("judge_id")
+            judge_id = self._get_cookie("judge_id")
             if judge_id and find_judge_by_id(judge_id.value):
                 self._render_page("vote")
             else:
                 self._render_page("judge")
 
         elif self.path == "/dequeue":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            presenter_id = cookies.get("presenter_id")
+            presenter_id = self._get_cookie("presenter_id")
             if presenter_id and find_presenter_by_id(presenter_id.value):
                 self._render_page("dequeue")
             else:
                 self._render_page("presenter")
 
         elif self.path == "/team_name":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            team_id = cookies.get("team_id")
+            team_id = self._get_cookie("team_id")
             if team_id and find_team_by_id(team_id.value):
                 team = find_team_by_id(team_id.value)
                 self._send_json(200, {"name": team.name})
             else:
-                self._send_json(400, {"message": "Please register"})
+                self._send_json(400, {"message": "Usuario no registrado"})
 
         elif self.path == "/teams":
-            self._send_json(200, {"teams": [team.name for team in teams]})
+            self._send_json(200, {"teams": [team.name for team in common.teams]})
 
         elif self.path == "/queue":
             global queue
-            self._send_json(200, {"queue": [item.get("team").name for item in queue]})
+            self._send_json(200, {"queue": [item.get("team").name for item in common.queue]})
 
         elif self.path == "/live_score":
-            global singer, live_score
-
-            team = find_team_by_id(singer)
+            team = find_team_by_id(common.singer)
             if not team:
                 self._send_json(200, { "singer": "esperando..." })
             else:
-                self._send_json(200, {
-                    "singer": team.name,
-                    "live_score": live_score
-                })
+                self._send_json(200, { "singer": team.name, "live_score": common.live_score })
 
         elif self.path == "/scoreboard":
-            self._send_json(200, {
-                "scoreboard": [{
+            self._send_json(200, { "scoreboard": [{
                     "name": team.name,
                     "total_score": round(team.get_total_score(), 2)
-                } for team in teams]
+                } for team in common.teams]
             })
 
         else:
-            self._send_json(404, {"error": "Page not found"})
+            self._send_json(404, {"error": "Página no encontrada"})
 
     def do_POST(self):
+
         try:
             content_length = int(self.headers.get("Content-Length"))
             body = self.rfile.read(content_length)
             data = json.loads(body)
 
         except json.JSONDecodeError:
-            self._send_json(400, {"error": "Invalid request"})
+            self._send_json(400, {"error": "Solicitud inválida"})
             return
 
         if self.path == "/register":
@@ -135,77 +126,45 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(code, data, cookies=cookies)
 
         elif self.path == "/enqueue":
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            team_id = cookies.get("team_id")
+            team_id = self._get_cookie("team_id")
             if team_id and find_team_by_id(team_id.value):
                 timestamp = datetime.now()
                 code, data = enqueue_team(team_id.value, timestamp)
                 self._send_json(code, data)
             else:
-                self._send_json(400, {"message": "Please register"})
+                self._send_json(400, {"message": "Por favor, registrese"})
             
         elif self.path == "/dequeue":
-            global queue, singer
+            presenter_id = self._get_cookie("presenter_id")
+            if presenter_id and find_presenter_by_id(presenter_id.value):
+                code, data = dequeue_team()
+                self._send_json(code, data)
+            else:
+                self._send_json(400, {"error": "Solo el presentador puede desencolar"})
 
-            # Check for presenter authentication
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            presenter_id = cookies.get("presenter_id")
-            if not presenter_id or not find_presenter_by_id(presenter_id.value):
-                self._send_json(400, {"error": "Only presenter can dequeue"})
-                return
-
-            if singer:
-                self._send_json(400, {"error": "Singer already chosen"})
-                return
-
-            if len(queue) == 0:
-                self._send_json(400, {"error": "Empty queue"})
-                return
-
-            singer = queue.pop(0).get("team").team_id
-            self._send_json(200, {"singer": singer})
 
         elif self.path == "/send_score":
-            global live_score
-
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            judge_id = cookies.get("judge_id")
+            judge_id = self._get_cookie("judge_id")
+            score = data.get("score")
             if judge_id and find_judge_by_id(judge_id.value):
-                judge = find_judge_by_id(judge_id.value)
-
-                if not singer:
-                    self._send_json(400, { "error": "Singer not chosen" })
-                    return
-
-                live_score[judge.num] = data.get("score")
-                self._send_json(200, {"message": "Success"})
-
+                code, data = send_score(judge_id.value, score)
+                self._send_json(code, data)
             else:
-                self._send_json(400, { "error": "Only judges can send score" })
+                self._send_json(400, { "error": "Solo los jueces pueden enviar puntaje" })
 
         elif self.path == "/commit_scores":
-            # Check for presenter authentication
-            cookie_header = self.headers.get("Cookie")
-            cookies = http.cookies.SimpleCookie(cookie_header)
-            presenter_id = cookies.get("presenter_id")
-            if not presenter_id or not find_presenter_by_id(presenter_id.value):
-                self._send_json(400, {"error": "Only presenter can commit scores"})
-                return
-
-            code, data = commit_scores()
-            self._send_json(code, data)
-            singer = None
-            live_score = [None, None, None]
-            
+            presenter_id = self._get_cookie("presenter_id")
+            if presenter_id and find_presenter_by_id(presenter_id.value):
+                code, data = commit_scores()
+                self._send_json(code, data)
+            else:
+                self._send_json(400, {"error": "Solo el presentador puede confirmar puntajes"})
+                        
         else:
-            self._send_json(404, {"error": "Page not found"})
+            self._send_json(404, {"error": "Página no encontrada"})
 
 
 if __name__ == "__main__":
-    
+
     server = HTTPServer(("127.0.0.1", 8000), RequestHandler)
     server.serve_forever()
-

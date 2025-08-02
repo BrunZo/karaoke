@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Karaoke - Dequeue</title>
+    <title>Karaoke</title>
 </head>
 <body style="padding: 10px">
-    <h1 id="title">Karaoke - Dequeue</h1>
+    <h1 id="title">Karaoke</h1>
     <div style="display:flex; gap:50px" id="container">
-        <button onclick="dequeueNext()">Dequeue Next Performer</button>
-        <button onclick="commitScores()">Commit Scores</button>
+        <button onclick="dequeueNext()">Desencolar siguiente cantante</button>
+        <button onclick="commitScores()">Confirmar puntajes</button>
     </div>
     <div id="status" style="margin-top: 20px;"></div>
 </body>
@@ -23,7 +23,7 @@ async function dequeueNext() {
         });
         const data = await response.json();
         if (response.ok) {
-            document.getElementById("status").innerHTML = `<p style="color: green;">Successfully dequeued performer</p>`;
+            document.getElementById("status").innerHTML = `<p style="color: green;">Cantante desencolado exitosamente</p>`;
         } else {
             document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
         }
@@ -43,7 +43,7 @@ async function commitScores() {
         });
         const data = await response.json();
         if (response.ok) {
-            document.getElementById("status").innerHTML = `<p style="color: green;">Scores committed successfully</p>`;
+            document.getElementById("status").innerHTML = `<p style="color: green;">Puntajes confirmados exitosamente</p>`;
         } else {
             document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
         }

@@ -1,15 +1,11 @@
 import uuid
-
-JUDGES_COUNT = 3
-judges = []
+import py.common as common
 
 class Judge():
 
     def __init__(self):
-        global judges
         self.judge_id = str(uuid.uuid4())
-        self.num = len(judges)
-        judges.append(self)
+        self.num = len(common.judges)
    
     def get_id(self):
         return self.judge_id
@@ -19,9 +15,8 @@ class Judge():
 
 
 def find_judge_by_id(judge_id):
-    global judges
 
-    for judge in judges:
+    for judge in common.judges:
         if judge.get_id() == judge_id:
             return judge
     return None

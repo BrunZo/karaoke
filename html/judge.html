@@ -6,21 +6,30 @@
 <body style="padding: 10px">
     <h1 id="title">Karaoke</h1>
     <div style="display:flex; gap:50px" id="container">
-        <button onclick="register()">Registrar dispositivo como juez</button>
+        <button onclick="registerJudge()">Registrar dispositivo como juez</button>
     </div>
+    <div id="status" style="margin-top: 20px;"></div>
 </body>
 <script>
-const url = window.location.host;
-async function register() {
-    fetch("/judge", {
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json",
-        },
-        "body": "{}"
-    }).then(() => {
-        window.location.reload()
-    })
+async function registerJudge() {
+    try {
+        const response = await fetch("/judge", {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": "{}"
+        });
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById("status").innerHTML = `<p style="color: green;">Te registraste como juez exitosamente</p>`;
+            window.location.reload();
+        } else {
+            document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        document.getElementById("status").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
 }
 </script>
 </html>
