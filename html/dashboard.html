@@ -2,94 +2,287 @@
 <html>
 <head>
     <title>Karaoke</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+
+    <style>
+    .star {
+    position: fixed;
+    top: -20px;
+    font-size: 14px;
+    color: currentColor;
+    opacity: 0.9;
+    z-index: 9999;
+    pointer-events: none;
+    animation: fall-down linear forwards;
+}
+
+@keyframes fall-down {
+    to {
+        transform: translateY(110vh);
+        opacity: 0;
+    }
+}
+
+
+        body {
+    font-family: 'Open Sans', sans-serif;
+}
+h1, h3 {
+    font-family: 'Poppins', sans-serif;
+}
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1, h3 {
+            color: #2c3e50;
+        }
+
+        #title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: nowrap;
+        }
+
+        #live-score-container {
+            flex: 0 0 72%;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        #side-container {
+            flex: 0 0 25%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #queue-container, #scoreboard-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        #queue {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #queue li {
+            background: #ecf0f1;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+
+        #singer-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #live-score-container > div {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        #live-score-container > div > div {
+            flex: 1 1 0;
+            min-width: 60px;
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+            word-break: break-word;
+        }
+
+        #live-score-container h1 {
+            font-size: 32px;
+            margin: 0;
+            color: #3498db;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        #scoreboard {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        #scoreboard tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        #scoreboard td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        #scoreboard tr:first-child {
+            font-weight: bold;
+            background-color: #ecf0f1;
+        }
+
+        @media (max-width: 768px) {
+            #container {
+                flex-direction: column;
+            }
+
+            #live-score-container,
+            #side-container {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
 </head>
-<body style="padding: 10px">
-    <h1 id="title">Karaoke</h1>
-    <div style="display:flex; gap:50px" id="container">
-        <div id="queue-container">
-            <h3>Cola para cantar</h3>
-            <ul id="queue"> 
-            </ul>
-        </div>
-        <div style="flex-grow:1" id="live-score-container">
+<body>
+    <h1 id="title">Uli Fest - Edici&oacute;n 2025</h1>
+    <div id="container">
+        <div id="live-score-container">
             <h3>Puntajes en vivo</h3>
-            <p id="singer-name"></p>
-            <div style="display:flex; justify-content:space-around">
-                <div style="padding: 10px; text-align: center;">
-                    <h1 id="score-0"></h1>
+            <p id="singer-name">Esperando participante...</p>
+            <div>
+                <div>
+                    <h1 id="score-0">?</h1>
                 </div>
-                <div style="padding: 10px; text-align: center;">
-                    <h1 id="score-1"></h1>
+                <div>
+                    <h1 id="score-1">?</h1>
                 </div>
-                <div style="padding: 10px; text-align: center;">
-                    <h1 id="score-2"></h1>
+                <div>
+                    <h1 id="score-2">?</h1>
                 </div>    
             </div>
         </div>
-        <div id="scoreboard-container">
-            <h3>Scoreboard</h3>
-            <table id="scoreboard">
-                <tr> <td>Nombre</td> <td>Puntaje</td> </tr>
-            <table>
+
+        <div id="side-container">
+            <div id="queue-container">
+                <h3>Cola para cantar</h3>
+                <ul id="queue"></ul>
+            </div>
+            <div id="scoreboard-container">
+                <h3>Scoreboard</h3>
+                <table id="scoreboard">
+                    <tr> <td>Nombre</td> <td>Puntaje</td> </tr>
+                </table>
+            </div>
         </div>
     </div>
+
+    <script>
+       function explosion() {
+    const colors = ['#f1c40f', '#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#ff66cc', '#ff8c00', '#2ecc71'];
+    const totalStars = 300; // cantidad total de estrellas
+    const delayBetween = 5; // milisegundos entre cada una
+
+    let created = 0;
+
+    const interval = setInterval(() => {
+        if (created >= totalStars) {
+            clearInterval(interval);
+            return;
+        }
+
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.innerHTML  = '&#9733;';
+
+        // Posición horizontal aleatoria
+        star.style.left = Math.random() * 100 + 'vw';
+
+        // Color aleatorio
+        star.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+        // Duración de caída aleatoria
+        const duration = 2 + Math.random() * 3;
+        star.style.animationDuration = duration + 's';
+
+        // Tamaño aleatorio
+        const size = 12 + Math.random() * 10;
+        star.style.fontSize = `${size}px`;
+
+        document.body.appendChild(star);
+
+        // Eliminar del DOM al terminar la animación
+        setTimeout(() => {
+            star.remove();
+        }, duration * 1000 + 100);
+
+        created++;
+    }, delayBetween);
+}
+
+
+    async function renderQueue() {
+        const response = await fetch("/queue")
+        let data = await response.json()  
+
+        if (data) {
+            const queue = document.getElementById("queue");
+            queue.innerHTML = "";
+            data["queue"].forEach((item) => {
+                const li = document.createElement("li");
+                li.textContent = item;
+                queue.appendChild(li);
+            });
+        }
+    }
+
+    async function renderSingerName() {
+        const response = await fetch("/live_score")
+        let data = await response.json()  
+
+        if (data) {
+            const singer_name = document.getElementById("singer-name");
+            singer_name.textContent = data["singer"] 
+                ? "Esta cantando: " + data["singer"]
+                : "Esperando participante...";
+
+            for (let i = 0; i < 3; i++) {
+                const score = document.getElementById("score-" + i);
+                score.textContent = data["live_score"][i] ?? '?';
+            }
+        }
+    }
+
+    async function renderScoreboard() {
+        const response = await fetch("/scoreboard")
+        let data = await response.json()  
+
+        if (data) {
+            const scoreboard = document.getElementById("scoreboard");
+            scoreboard.innerHTML = "<tr> <td>Nombre</td> <td>Puntaje</td> </tr>";
+            data["scoreboard"].forEach((item) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td>${item["name"]}</td><td>${item["total_score"]}</td>`;
+                scoreboard.appendChild(tr);
+            });
+        }
+    }
+
+    setInterval(() => {
+        renderQueue();
+        renderSingerName();
+        renderScoreboard();
+    }, 200);
+    </script>
 </body>
-<script>
-async function renderQueue() {
-    const response = await fetch("/queue")
-    let data = await response.json()  
-
-    if (data) {
-        queue = document.getElementById("queue");
-        queue.innerHTML = "";
-        data["queue"].map((item) => {
-            const li = document.createElement("li");
-            li.innerHTML = item;
-            queue.appendChild(li);
-        })
-    }
-}
-
-async function renderSingerName() {
-    const response = await fetch("/live_score")
-    let data = await response.json()  
-
-    if (data) {
-        singer_name = document.getElementById("singer-name");
-        singer_name.innerHTML = "Esta cantando: " + data["singer"] || "Esperando participante..."
-
-        for (let i = 0; i < 3; i++) {
-            id = "score-" + i.toString();
-            score = document.getElementById(id);
-            score.innerHTML = data["live_score"][i] || '?';
-        } 
-    }
-}
-
-async function renderScoreboard() {
-    const response = await fetch("/scoreboard")
-    let data = await response.json()  
-
-    if (data) {
-        scoreboard = document.getElementById("scoreboard");
-        scoreboard.innerHTML = "<tr> <td>Nombre</td> <td>Puntaje</td> </tr>";
-        data["scoreboard"].map((item) => {
-            const tr = document.createElement("tr");
-            const name_td = document.createElement("td");
-            const score_td = document.createElement("td");
-            name_td.innerHTML = item["name"];
-            score_td.innerHTML = item["total_score"];
-            tr.appendChild(name_td);
-            tr.appendChild(score_td);
-            scoreboard.appendChild(tr);
-        })
-    }
-}
-
-setInterval(() => {
-    renderQueue();
-    renderSingerName();
-    renderScoreboard();
-}, 200);
-</script>
 </html>
