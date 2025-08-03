@@ -1,35 +1,39 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Karaoke</title>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600&display=swap"
+        rel="stylesheet">
 
     <style>
-    .star {
-    position: fixed;
-    top: -20px;
-    font-size: 14px;
-    color: currentColor;
-    opacity: 0.9;
-    z-index: 9999;
-    pointer-events: none;
-    animation: fall-down linear forwards;
-}
+        .star {
+            position: fixed;
+            top: -20px;
+            font-size: 14px;
+            color: currentColor;
+            opacity: 0.9;
+            z-index: 9999;
+            pointer-events: none;
+            animation: fall-down linear forwards;
+        }
 
-@keyframes fall-down {
-    to {
-        transform: translateY(110vh);
-        opacity: 0;
-    }
-}
+        @keyframes fall-down {
+            to {
+                transform: translateY(110vh);
+                opacity: 0;
+            }
+        }
 
 
         body {
-    font-family: 'Open Sans', sans-serif;
-}
-h1, h3 {
-    font-family: 'Poppins', sans-serif;
-}
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        h1,
+        h3 {
+            font-family: 'Poppins', sans-serif;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -39,7 +43,8 @@ h1, h3 {
             color: #333;
         }
 
-        h1, h3 {
+        h1,
+        h3 {
             color: #2c3e50;
         }
 
@@ -59,7 +64,7 @@ h1, h3 {
             background: white;
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         #side-container {
@@ -69,11 +74,12 @@ h1, h3 {
             gap: 20px;
         }
 
-        #queue-container, #scoreboard-container {
+        #queue-container,
+        #scoreboard-container {
             background: white;
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         #queue {
@@ -96,14 +102,14 @@ h1, h3 {
             text-align: center;
         }
 
-        #live-score-container > div {
+        #live-score-container>div {
             display: flex;
             justify-content: space-around;
             gap: 10px;
             flex-wrap: wrap;
         }
 
-        #live-score-container > div > div {
+        #live-score-container>div>div {
             flex: 1 1 0;
             min-width: 60px;
             text-align: center;
@@ -154,6 +160,7 @@ h1, h3 {
         }
     </style>
 </head>
+
 <body>
     <h1 id="title">Uli Fest - Edici&oacute;n 2025</h1>
     <div id="container">
@@ -169,7 +176,7 @@ h1, h3 {
                 </div>
                 <div>
                     <h1 id="score-2">?</h1>
-                </div>    
+                </div>
             </div>
         </div>
 
@@ -181,108 +188,128 @@ h1, h3 {
             <div id="scoreboard-container">
                 <h3>Scoreboard</h3>
                 <table id="scoreboard">
-                    <tr> <td>Nombre</td> <td>Puntaje</td> </tr>
+                    <tr>
+                        <td>Nombre</td>
+                        <td>Puntaje</td>
+                    </tr>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-       function explosion() {
-    const colors = ['#f1c40f', '#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#ff66cc', '#ff8c00', '#2ecc71'];
-    const totalStars = 300; // cantidad total de estrellas
-    const delayBetween = 5; // milisegundos entre cada una
+        function explosion() {
+            const colors = ['#f1c40f', '#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#ff66cc', '#ff8c00', '#2ecc71'];
+            const totalStars = 300; // cantidad total de estrellas
+            const delayBetween = 5; // milisegundos entre cada una
 
-    let created = 0;
+            let created = 0;
 
-    const interval = setInterval(() => {
-        if (created >= totalStars) {
-            clearInterval(interval);
-            return;
+            const interval = setInterval(() => {
+                if (created >= totalStars) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.innerHTML = '&#9733;';
+
+                // Posición horizontal aleatoria
+                star.style.left = Math.random() * 100 + 'vw';
+
+                // Color aleatorio
+                star.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+                // Duración de caída aleatoria
+                const duration = 2 + Math.random() * 3;
+                star.style.animationDuration = duration + 's';
+
+                // Tamaño aleatorio
+                const size = 12 + Math.random() * 10;
+                star.style.fontSize = `${size}px`;
+
+                document.body.appendChild(star);
+
+                // Eliminar del DOM al terminar la animación
+                setTimeout(() => {
+                    star.remove();
+                }, duration * 1000 + 100);
+
+                created++;
+            }, delayBetween);
         }
 
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.innerHTML  = '&#9733;';
-
-        // Posición horizontal aleatoria
-        star.style.left = Math.random() * 100 + 'vw';
-
-        // Color aleatorio
-        star.style.color = colors[Math.floor(Math.random() * colors.length)];
-
-        // Duración de caída aleatoria
-        const duration = 2 + Math.random() * 3;
-        star.style.animationDuration = duration + 's';
-
-        // Tamaño aleatorio
-        const size = 12 + Math.random() * 10;
-        star.style.fontSize = `${size}px`;
-
-        document.body.appendChild(star);
-
-        // Eliminar del DOM al terminar la animación
-        setTimeout(() => {
-            star.remove();
-        }, duration * 1000 + 100);
-
-        created++;
-    }, delayBetween);
-}
 
 
-    async function renderQueue() {
-        const response = await fetch("/queue")
-        let data = await response.json()  
+        var estado = [true, true, true];
 
-        if (data) {
-            const queue = document.getElementById("queue");
-            queue.innerHTML = "";
-            data["queue"].forEach((item) => {
-                const li = document.createElement("li");
-                li.textContent = item;
-                queue.appendChild(li);
-            });
-        }
-    }
 
-    async function renderSingerName() {
-        const response = await fetch("/live_score")
-        let data = await response.json()  
+        async function renderQueue() {
+            const response = await fetch("/queue")
+            let data = await response.json()
 
-        if (data) {
-            const singer_name = document.getElementById("singer-name");
-            singer_name.textContent = data["singer"] 
-                ? "Esta cantando: " + data["singer"]
-                : "Esperando participante...";
-
-            for (let i = 0; i < 3; i++) {
-                const score = document.getElementById("score-" + i);
-                score.textContent = data["live_score"][i] ?? '?';
+            if (data) {
+                const queue = document.getElementById("queue");
+                queue.innerHTML = "";
+                data["queue"].forEach((item) => {
+                    const li = document.createElement("li");
+                    li.textContent = item;
+                    queue.appendChild(li);
+                });
             }
         }
-    }
 
-    async function renderScoreboard() {
-        const response = await fetch("/scoreboard")
-        let data = await response.json()  
+        async function renderSingerName() {
+            const response = await fetch("/live_score")
+            let data = await response.json()
 
-        if (data) {
-            const scoreboard = document.getElementById("scoreboard");
-            scoreboard.innerHTML = "<tr> <td>Nombre</td> <td>Puntaje</td> </tr>";
-            data["scoreboard"].forEach((item) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td>${item["name"]}</td><td>${item["total_score"]}</td>`;
-                scoreboard.appendChild(tr);
-            });
+            if (data) {
+                const singer_name = document.getElementById("singer-name");
+                singer_name.textContent = data["singer"]
+                    ? "Esta cantando: " + data["singer"]
+                    : "Esperando participante...";
+
+                var cont = 0;
+                for (let i = 0; i < 3; i++) {
+                    if (data["live_score"] && data["live_score"][i] == "10" && estado[i]) {
+                        explosion();
+                        estado[i] = false;
+                    }
+                    if (!data["live_score"]) cont++;
+                    const score = document.getElementById("score-" + i);
+
+                    score.textContent = data["live_score"] ? (data["live_score"][i] ? data["live_score"][i] : '?') : '?';
+                }
+                if (cont == 3) {
+                    for (let i = 0; i < 3; i++) {
+                        estado[i] = true;
+                    }
+                }
+            }
         }
-    }
 
-    setInterval(() => {
-        renderQueue();
-        renderSingerName();
-        renderScoreboard();
-    }, 200);
+        async function renderScoreboard() {
+            const response = await fetch("/scoreboard")
+            let data = await response.json()
+
+            if (data) {
+                const scoreboard = document.getElementById("scoreboard");
+                scoreboard.innerHTML = "<tr> <td>Nombre</td> <td>Puntaje</td> </tr>";
+                data["scoreboard"].forEach((item) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${item["name"]}</td><td>${item["total_score"]}</td>`;
+                    scoreboard.appendChild(tr);
+                });
+            }
+        }
+
+        setInterval(() => {
+            renderQueue();
+            renderSingerName();
+            renderScoreboard();
+        }, 200);
     </script>
 </body>
+
 </html>

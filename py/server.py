@@ -147,6 +147,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             judge_id = self._get_cookie("judge_id")
             score = data.get("score")
             if judge_id and find_judge_by_id(judge_id.value):
+                if score > 10:
+                    score=10
+                if score < 0:
+                    score = 0
                 code, data = send_score(judge_id.value, score)
                 self._send_json(code, data)
             else:
